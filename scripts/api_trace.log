@@ -1,0 +1,13 @@
+--- Request at 2026-02-12T17:12:14.937Z ---
+Result type: object
+Result constructor: Promise
+Proto methods: constructor, then, catch, finally
+❌ No method found
+❌ Error: Streaming method missing
+
+--- New Request ---
+Returned type: object
+Returned constructor: Promise
+Resolved type: object
+Resolved constructor: DefaultStreamTextResult
+Resolved methods: constructor, teeStream, textStream, fullStream, toAIStream, toDataStreamInternal, pipeAIStreamToResponse, pipeDataStreamToResponse, pipeTextStreamToResponse, toAIStreamResponse, toDataStream, toDataStreamResponse, toTextStreamResponse

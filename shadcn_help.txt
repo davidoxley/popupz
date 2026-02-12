@@ -1,0 +1,29 @@
+﻿Usage: shadcn init [options] [components...]
+
+initialize your project and install dependencies
+
+Arguments:
+  components                     names, url or local path to component
+
+Options:
+  -t, --template <template>      the template to use. (next, start, vite,
+                                 next-monorepo)
+  -b, --base-color <base-color>  the base color to use. (neutral, gray, zinc,
+                                 stone, slate)
+  -y, --yes                      skip confirmation prompt. (default: true)
+  -d, --defaults,                use default configuration. (default: false)
+  -f, --force                    force overwrite of existing configuration.
+                                 (default: false)
+  -c, --cwd <cwd>                the working directory. defaults to the current
+                                 directory. (default:
+                                 "C:\\Users\\david\\OneDrive\\DocStore\\Code\\Projects\\Popupz")
+  -s, --silent                   mute output. (default: false)
+  --src-dir                      use the src directory when creating a new
+                                 project. (default: false)
+  --no-src-dir                   do not use the src directory when creating a
+                                 new project.
+  --css-variables                use css variables for theming. (default: true)
+  --no-css-variables             do not use css variables for theming.
+  --no-base-style                do not install the base shadcn style.
+  --rtl                          enable RTL support. (default: false)
+  -h, --help                     display help for command

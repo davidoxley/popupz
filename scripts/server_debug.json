@@ -1,0 +1,10 @@
+{
+  "keys": [],
+  "constructor": "Promise",
+  "proto": [
+    "constructor",
+    "then",
+    "catch",
+    "finally"
+  ]
+}
