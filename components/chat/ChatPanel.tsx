@@ -75,39 +75,45 @@ export default function ChatPanel() {
         .pop();
 
     // Split the message into question (before list) and options (the list itself)
+    // Find the start of a markdown list — supports both - and * markers
+    const findListStart = (text: string): number => {
+        const candidates = [
+            text.indexOf('\n- '),
+            text.indexOf('\n* '),
+            text.indexOf('\n\n- '),
+            text.indexOf('\n\n* '),
+        ].filter(i => i > -1);
+        return candidates.length > 0 ? Math.min(...candidates) : -1;
+    };
+
     const messageContent = latestAssistantMessage?.content || '';
-    const listStartIndex = messageContent.indexOf('\n-');
+    const listStartIndex = findListStart(messageContent);
     const questionPart = listStartIndex > -1 ? messageContent.slice(0, listStartIndex).trim() : messageContent.trim();
     const optionsPart = listStartIndex > -1 ? messageContent.slice(listStartIndex).trim() : '';
 
-    // Dynamic placeholder — derived from the agent's question
+    // Dynamic placeholder — extracts the topic from the AI's question
+    // e.g. "What is the primary goal of your website?" → "or specify your own primary goal..."
     const getPlaceholder = () => {
-        const q = questionPart.toLowerCase();
-        if (q.includes('business') || q.includes('sell') || q.includes('product')) {
-            return "Describe your business, products, or services...";
+        if (!questionPart || !optionsPart) return "Describe your business, products, or services...";
+
+        // Find the last sentence (the question) — it's on its own paragraph or after a period
+        const sentences = questionPart.split(/[.!]\s+/);
+        const lastSentence = sentences[sentences.length - 1]?.trim() || '';
+
+        // Extract the core topic from the question
+        const match = lastSentence.match(/(?:what|which|how)\s+(?:is |should |will |would |best |)(?:the |your |a |)(.+?)\??$/i);
+        if (match && match[1]) {
+            const topic = match[1].replace(/^(be|feel|look)\s+/i, '').trim().toLowerCase();
+            return `or specify your own ${topic}...`;
         }
-        if (q.includes('style') || q.includes('aesthetic') || q.includes('vibe') || q.includes('look')) {
-            return "Describe the style or aesthetic you prefer...";
-        }
-        if (q.includes('audience') || q.includes('customer') || q.includes('target')) {
-            return "Describe your ideal customer or target audience...";
-        }
-        if (q.includes('color') || q.includes('palette') || q.includes('brand')) {
-            return "Describe your brand colors or preferences...";
-        }
-        if (q.includes('font') || q.includes('typograph')) {
-            return "Describe your typography preference...";
-        }
-        if (q.includes('change') || q.includes('update') || q.includes('edit') || q.includes('modify')) {
-            return "Describe the change you'd like to make...";
-        }
-        return "Type your response or request any change...";
+
+        return "or type your own preference...";
     };
 
     // State machine:
-    // - isAgentAnalyzing: agent is loading AND has no text response for the user yet
-    // - showInput: agent stopped, not complete, and has a question for the user
-    const isAgentAnalyzing = isLoading && !latestAssistantMessage;
+    // State: show analyzing when loading (clears previous content)
+    // This ensures the panel clears when user clicks an option or submits input
+    const isAgentAnalyzing = isLoading;
     const showInput = !isLoading && !isComplete && latestAssistantMessage;
 
     return (
@@ -222,24 +228,32 @@ export default function ChatPanel() {
                             className="px-8 md:px-10"
                         >
                             <div className="w-full max-w-lg mx-auto py-12">
-                                {/* Question */}
-                                <div className="mb-12">
-                                    <p
-                                        className="leading-relaxed"
-                                        style={{
-                                            fontSize: '16px',
-                                            fontWeight: 600,
-                                            color: '#fafafa',
-                                            lineHeight: 1.5,
+                                {/* Question — rendered as markdown so paragraph breaks are preserved */}
+                                <div className="mb-6">
+                                    <ReactMarkdown
+                                        components={{
+                                            p: ({ children }) => (
+                                                <p
+                                                    className="leading-relaxed mb-4 last:mb-0"
+                                                    style={{
+                                                        fontSize: '16px',
+                                                        fontWeight: 600,
+                                                        color: '#fafafa',
+                                                        lineHeight: 1.5,
+                                                    }}
+                                                >
+                                                    {children}
+                                                </p>
+                                            ),
                                         }}
                                     >
                                         {questionPart}
-                                    </p>
+                                    </ReactMarkdown>
                                 </div>
 
                                 {/* Option Pills */}
                                 {optionsPart && (
-                                    <div className="flex flex-col gap-3 mb-8">
+                                    <div className="flex flex-col gap-3 mb-8" style={{ marginTop: '10px' }}>
                                         <ReactMarkdown
                                             components={{
                                                 ul: ({ children }) => <>{children}</>,
@@ -250,53 +264,90 @@ export default function ChatPanel() {
 
                                                     if (isOption) {
                                                         const strongNode = firstChild as any;
-                                                        const titleText = strongNode?.children?.[0]?.value || '';
+                                                        const rawTitle = strongNode?.children?.[0]?.value || '';
+                                                        // Strip (current) from the title for the click action
+                                                        const titleText = rawTitle.replace(/\s*\(current\)\s*/i, '').trim();
+                                                        // Check if this option is the current selection
+                                                        const isCurrent = rawTitle.toLowerCase().includes('(current)');
 
                                                         return (
-                                                            <button
-                                                                className="w-full text-left rounded-2xl transition-all duration-200 active:scale-[0.98] group"
+                                                            <motion.button
+                                                                initial={{ opacity: 0, y: 8 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ duration: 0.25 }}
+                                                                className="w-full text-left transition-all duration-200 active:scale-[0.98] group"
                                                                 style={{
-                                                                    background: 'rgba(255,255,255,0.03)',
-                                                                    border: '1px solid rgba(255,255,255,0.06)',
-                                                                    padding: '16px 20px',
+                                                                    background: isCurrent ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.03)',
+                                                                    border: isCurrent ? '1px solid rgba(59,130,246,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                                                                    borderRadius: '16px',
+                                                                    padding: '0',
+                                                                    overflow: 'hidden',
+                                                                    position: 'relative',
                                                                 }}
                                                                 onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
+                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.06)';
                                                                     e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
+                                                                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.1)';
                                                                 }}
                                                                 onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                                                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)';
+                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.03)';
+                                                                    e.currentTarget.style.borderColor = isCurrent ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.08)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
                                                                 }}
                                                                 onClick={() => {
                                                                     append({ role: 'user', content: titleText });
                                                                 }}
                                                             >
-                                                                <div className="flex flex-col gap-1">
+                                                                <div style={{ padding: '16px 20px' }}>
                                                                     {children}
                                                                 </div>
-                                                            </button>
+                                                                {isCurrent && (
+                                                                    <div style={{
+                                                                        position: 'absolute',
+                                                                        top: '14px',
+                                                                        right: '16px',
+                                                                        fontSize: '9px',
+                                                                        fontWeight: 700,
+                                                                        letterSpacing: '0.12em',
+                                                                        textTransform: 'uppercase',
+                                                                        color: '#60a5fa',
+                                                                        background: 'rgba(59,130,246,0.1)',
+                                                                        border: '1px solid rgba(59,130,246,0.15)',
+                                                                        borderRadius: '6px',
+                                                                        padding: '3px 8px',
+                                                                    }}>
+                                                                        Active
+                                                                    </div>
+                                                                )}
+                                                            </motion.button>
                                                         );
                                                     }
                                                     return null;
                                                 },
-                                                strong: ({ children }) => (
-                                                    <span
-                                                        className="block"
-                                                        style={{
-                                                            fontSize: '14px',
-                                                            fontWeight: 700,
-                                                            color: '#fafafa',
-                                                        }}
-                                                    >
-                                                        {children}
-                                                    </span>
-                                                ),
+                                                strong: ({ children }) => {
+                                                    // Strip (current) from displayed title
+                                                    const text = typeof children === 'string' ? children :
+                                                        Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
+                                                    const cleanText = text.replace(/\s*\(current\)\s*/i, '').trim();
+                                                    return (
+                                                        <span
+                                                            className="block"
+                                                            style={{
+                                                                fontSize: '14px',
+                                                                fontWeight: 700,
+                                                                color: '#fafafa',
+                                                                marginBottom: '4px',
+                                                            }}
+                                                        >
+                                                            {cleanText || children}
+                                                        </span>
+                                                    );
+                                                },
                                                 p: ({ children }) => (
                                                     <span
                                                         className="block"
                                                         style={{
-                                                            fontSize: '13px',
+                                                            fontSize: '12px',
                                                             fontWeight: 400,
                                                             color: '#71717a',
                                                             lineHeight: 1.5,

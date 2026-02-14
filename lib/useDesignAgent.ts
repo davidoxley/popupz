@@ -8,6 +8,8 @@ import { useRef, useState, useEffect } from "react";
 /**
  * Rotating sub-status details to keep the UI feeling alive during each stage.
  */
+// OPTIMIZATION: 2024-02-14 — Removed "SELECTING DESIGN DIRECTION" stage.
+// To revert: uncomment the stage below and restore phases/topSelections checks in getLoadingStatus.
 const STAGE_DETAILS: Record<string, string[]> = {
     "CONNECTING TO AI...": [
         "Establishing secure connection",
@@ -27,14 +29,16 @@ const STAGE_DETAILS: Record<string, string[]> = {
         "Evaluating pricing strategies",
         "Benchmarking design trends",
     ],
-    "SELECTING DESIGN DIRECTION...": [
-        "Evaluating brand positioning",
-        "Selecting typography pairings",
-        "Curating color palettes",
-        "Defining animation rules",
-        "Choosing navigation model",
-    ],
+    // "SELECTING DESIGN DIRECTION...": [
+    //     "Evaluating brand positioning",
+    //     "Selecting typography pairings",
+    //     "Curating color palettes",
+    //     "Defining animation rules",
+    //     "Choosing navigation model",
+    // ],
     "BUILDING HOMEPAGE...": [
+        "Selecting design direction",
+        "Curating color palette",
         "Generating hero section",
         "Composing product grid layout",
         "Building section hierarchy",
@@ -60,7 +64,7 @@ export function useDesignAgent() {
         initialMessages: query ? [
             { id: 'initial-user', role: 'user', content: `I want to sell: ${query}` }
         ] : [],
-        maxSteps: 15,
+        maxSteps: 10,
         onError: (err) => {
             console.error('Chat Error:', err);
             if (toolCallCount.current === 0) {
@@ -117,10 +121,12 @@ export function useDesignAgent() {
         const lastMessage = chat.messages[chat.messages.length - 1];
         const isUserLast = lastMessage?.role === 'user';
 
+        // OPTIMIZATION: 2024-02-14 — Simplified loading stages (no phases/topSelections step).
+        // To revert: uncomment the two lines below and change marketResearch line.
         if (config.homepageDraft) return "UPDATING WEBSITE...";
-        if (config.topSelections) return "BUILDING HOMEPAGE...";
-        if (config.phases) return "SELECTING DESIGN DIRECTION...";
-        if (config.marketResearch) return "RESEARCHING MARKET...";
+        // if (config.topSelections) return "BUILDING HOMEPAGE...";
+        // if (config.phases) return "SELECTING DESIGN DIRECTION...";
+        if (config.marketResearch) return "BUILDING HOMEPAGE...";
         if (config.input?.businessDescription || isUserLast) return "ANALYZING BUSINESS...";
         if (chat.messages.length > 1) return "CONNECTING TO AI...";
         return "CONNECTING TO AI...";
