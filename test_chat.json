@@ -1,8 +1,9 @@
 {
     "messages": [
         {
+            "id": "test",
             "role": "user",
-            "content": "hi"
+            "content": "I want to sell coffee"
         }
     ]
 }

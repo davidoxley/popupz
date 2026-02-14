@@ -1,6 +1,10 @@
+---
+trigger: always_on
+---
+
 # Dubai Agents Stack Rules
 
-This workspace follows the "dubai-agents" shell technology stack blueprint for the Popupz project.
+This workspace implements the below shell technology stack blueprint for the Popupz project.
 
 ## Architectural Constraints
 

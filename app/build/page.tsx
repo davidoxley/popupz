@@ -24,7 +24,7 @@ export default function BuildPage() {
             <motion.div
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                className="w-[30%] border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 z-20"
+                className="w-[30%] border-r border-zinc-200 dark:border-zinc-800 bg-[#09090b] z-20 dark"
             >
                 <ChatPanel />
             </motion.div>

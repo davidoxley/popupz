@@ -63,7 +63,7 @@ export default function Home() {
               name="store-query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="What do you want to sell today?"
+              placeholder="Tell me a bit about your business and your products or services"
               className="flex-1 h-14 bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
             />
             <Button

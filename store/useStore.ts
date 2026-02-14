@@ -1,27 +1,83 @@
 import { create } from 'zustand';
 
+export interface StorefrontConfig {
+    // New Schema Fields
+    input?: {
+        businessName: string | null;
+        businessDescription: string | null;
+        products: Array<{
+            name: string;
+            category?: string;
+            price?: number;
+            description?: string;
+            imageUrl?: string;
+        }> | null;
+    };
+
+    marketResearch?: {
+        inferredCategory: string;
+        inferredCustomer: string;
+        inferredPricePosition: "budget" | "mid" | "premium";
+        keyDifferentiators: string[];
+        commonHomepagePatterns: string[];
+        trustSignalsToUse: string[];
+        competitorStyleArchetypes: Array<{ archetype: string; notes: string }>;
+    } | null;
+
+    phases?: {
+        objective: PhaseInfo;
+        brandPositioning: PhaseInfo;
+        tone: PhaseInfo;
+        colourSystem: PhaseInfo;
+        typography: PhaseInfo;
+        navigationModel: PhaseInfo;
+        animationRules: PhaseInfo;
+        scrollBehaviour: PhaseInfo;
+    } | null;
+
+    topSelections?: {
+        objective: string;
+        brandPositioning: string;
+        tone: string;
+        colourSystem: string;
+        typography: string;
+        navigationModel: string;
+        animationRules: string;
+        scrollBehaviour: string;
+    } | null;
+
+    homepageDraft?: {
+        /** The complete, self-contained HTML string for the homepage. This is what gets rendered. */
+        html: string;
+        /** Optional structured metadata for logging/debugging */
+        seo?: { title: string; metaDescription: string; h1: string };
+    } | null;
+}
+
+interface PhaseInfo {
+    options: Array<{ id: string; label: string; rationale: string; implementationNotes: string[] }>;
+    topPickId: string;
+    topPickWhy: string;
+}
+
 interface StoreState {
     query: string;
-    brandName: string;
-    aesthetic: string;
-    price: string;
+    config: StorefrontConfig;
     isComplete: boolean;
     setQuery: (query: string) => void;
-    setBrandName: (name: string) => void;
-    setAesthetic: (aesthetic: string) => void;
-    setPrice: (price: string) => void;
+    updateConfig: (delta: Partial<StorefrontConfig> | ((prev: StorefrontConfig) => StorefrontConfig)) => void;
     setComplete: (complete: boolean) => void;
 }
 
+const initialConfig: StorefrontConfig = {};
+
 export const useStore = create<StoreState>((set) => ({
     query: '',
-    brandName: '',
-    aesthetic: '',
-    price: '',
+    config: initialConfig,
     isComplete: false,
     setQuery: (query) => set({ query }),
-    setBrandName: (brandName) => set({ brandName }),
-    setAesthetic: (aesthetic) => set({ aesthetic }),
-    setPrice: (price) => set({ price }),
+    updateConfig: (delta) => set((state) => ({
+        config: typeof delta === 'function' ? delta(state.config) : { ...state.config, ...delta }
+    })),
     setComplete: (isComplete) => set({ isComplete }),
 }));
