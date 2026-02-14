@@ -1,0 +1,196 @@
+{
+    "version": "1.0",
+    "description": "Local stock image library for Popupz preview pages. Meeting/business theme.",
+    "images": [
+        {
+            "id": "conference-room",
+            "filename": "conference-room.jpg",
+            "path": "/images/stock/conference-room.jpg",
+            "title": "Modern Conference Room",
+            "description": "Spacious modern conference room with long table, office chairs, and large windows with natural light.",
+            "category": "workspace",
+            "tags": [
+                "conference",
+                "meeting",
+                "room",
+                "office",
+                "table",
+                "chairs",
+                "professional",
+                "interior",
+                "modern"
+            ]
+        },
+        {
+            "id": "team-collaboration",
+            "filename": "team-collaboration.jpg",
+            "path": "/images/stock/team-collaboration.jpg",
+            "title": "Team Collaboration",
+            "description": "Diverse team of professionals collaborating around laptops at a shared workspace, engaged in discussion.",
+            "category": "people",
+            "tags": [
+                "team",
+                "collaboration",
+                "group",
+                "teamwork",
+                "people",
+                "diversity",
+                "laptops",
+                "working",
+                "discussion"
+            ]
+        },
+        {
+            "id": "video-conference",
+            "filename": "video-conference.jpg",
+            "path": "/images/stock/video-conference.jpg",
+            "title": "Video Conference Call",
+            "description": "Professional video conference setup with remote participants displayed on screen, modern meeting technology.",
+            "category": "technology",
+            "tags": [
+                "video",
+                "conference",
+                "remote",
+                "virtual",
+                "screen",
+                "technology",
+                "call",
+                "online",
+                "meeting"
+            ]
+        },
+        {
+            "id": "coffee-meeting",
+            "filename": "coffee-meeting.jpg",
+            "path": "/images/stock/coffee-meeting.jpg",
+            "title": "Casual Business Meeting",
+            "description": "Business professionals in a casual meeting setting, having a friendly discussion over coffee.",
+            "category": "people",
+            "tags": [
+                "coffee",
+                "casual",
+                "meeting",
+                "discussion",
+                "informal",
+                "people",
+                "business",
+                "networking",
+                "one-on-one"
+            ]
+        },
+        {
+            "id": "corporate-event",
+            "filename": "corporate-event.jpg",
+            "path": "/images/stock/corporate-event.jpg",
+            "title": "Corporate Event",
+            "description": "Large corporate event or conference with audience seating and professional stage lighting.",
+            "category": "events",
+            "tags": [
+                "event",
+                "conference",
+                "corporate",
+                "seminar",
+                "audience",
+                "stage",
+                "presentation",
+                "large",
+                "venue"
+            ]
+        },
+        {
+            "id": "coworking-space",
+            "filename": "coworking-space.jpg",
+            "path": "/images/stock/coworking-space.jpg",
+            "title": "Coworking Space",
+            "description": "Open coworking space with shared desks, modern furniture, plants, and natural lighting.",
+            "category": "workspace",
+            "tags": [
+                "coworking",
+                "space",
+                "shared",
+                "desk",
+                "open",
+                "modern",
+                "office",
+                "startup",
+                "creative"
+            ]
+        },
+        {
+            "id": "whiteboard-brainstorm",
+            "filename": "whiteboard-brainstorm.jpg",
+            "path": "/images/stock/whiteboard-brainstorm.jpg",
+            "title": "Whiteboard Brainstorming Session",
+            "description": "Team gathered around a whiteboard during a brainstorming session, sharing ideas and strategies.",
+            "category": "people",
+            "tags": [
+                "whiteboard",
+                "brainstorm",
+                "ideas",
+                "strategy",
+                "planning",
+                "team",
+                "creative",
+                "workshop",
+                "session"
+            ]
+        },
+        {
+            "id": "business-handshake",
+            "filename": "business-handshake.jpg",
+            "path": "/images/stock/business-handshake.jpg",
+            "title": "Business Handshake",
+            "description": "Professional business handshake symbolizing partnership, deal closing, or welcoming a client.",
+            "category": "people",
+            "tags": [
+                "handshake",
+                "deal",
+                "partnership",
+                "agreement",
+                "welcome",
+                "professional",
+                "trust",
+                "client",
+                "success"
+            ]
+        },
+        {
+            "id": "presentation-stage",
+            "filename": "presentation-stage.jpg",
+            "path": "/images/stock/presentation-stage.jpg",
+            "title": "Presentation on Stage",
+            "description": "Professional speaker delivering a presentation on a well-lit stage to an engaged audience.",
+            "category": "events",
+            "tags": [
+                "presentation",
+                "speaker",
+                "stage",
+                "talk",
+                "keynote",
+                "public",
+                "speaking",
+                "audience",
+                "inspire"
+            ]
+        },
+        {
+            "id": "modern-office",
+            "filename": "modern-office.jpg",
+            "path": "/images/stock/modern-office.jpg",
+            "title": "Modern Office Interior",
+            "description": "Clean, modern office interior with minimalist furniture, glass partitions, and professional atmosphere.",
+            "category": "workspace",
+            "tags": [
+                "office",
+                "modern",
+                "interior",
+                "clean",
+                "minimalist",
+                "professional",
+                "workspace",
+                "corporate",
+                "design"
+            ]
+        }
+    ]
+}

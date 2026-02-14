@@ -54,7 +54,14 @@ const STAGE_DETAILS: Record<string, string[]> = {
 };
 
 export function useDesignAgent() {
-    const { query, updateConfig, setComplete, isComplete, config, addVersion } = useStore();
+    // Use individual selectors to avoid re-rendering when unrelated store slices change
+    // (e.g. activeVersionIndex, htmlVersions — which are canvas/preview concerns)
+    const query = useStore((s) => s.query);
+    const config = useStore((s) => s.config);
+    const isComplete = useStore((s) => s.isComplete);
+    const updateConfig = useStore((s) => s.updateConfig);
+    const setComplete = useStore((s) => s.setComplete);
+    const addVersion = useStore((s) => s.addVersion);
     const toolCallCount = useRef(0);
     const [subDetail, setSubDetail] = useState("");
     const subDetailIndex = useRef(0);

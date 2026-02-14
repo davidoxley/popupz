@@ -46,8 +46,6 @@ function PulsingDots({ color = '#3b82f6' }: { color?: string }) {
 export default function ChatPanel() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [showLogoUpload, setShowLogoUpload] = useState(false);
-    const [showTextLogo, setShowTextLogo] = useState(false);
     const [textLogoValue, setTextLogoValue] = useState('');
 
     const chat = useDesignAgent();
@@ -254,144 +252,357 @@ export default function ChatPanel() {
                                     </ReactMarkdown>
                                 </div>
 
-                                {/* Option Pills */}
-                                {optionsPart && (
-                                    <div className="flex flex-col gap-3 mb-8" style={{ marginTop: '10px' }}>
-                                        <ReactMarkdown
-                                            components={{
-                                                ul: ({ children }) => <>{children}</>,
-                                                ol: ({ children }) => <>{children}</>,
-                                                li: ({ node, children }) => {
-                                                    const firstChild = node?.children?.[0];
-                                                    const isOption = firstChild && firstChild.type === 'element' && firstChild.tagName === 'strong';
+                                {/* Option Pills OR Logo Phase */}
+                                {optionsPart && (() => {
+                                    const isLogoPhase = optionsPart.toLowerCase().includes('upload logo') && optionsPart.toLowerCase().includes('text logo');
 
-                                                    if (isOption) {
-                                                        // Extract ALL text from the entire node to detect (current) anywhere
-                                                        const extractText = (n: any): string => {
-                                                            if (n.type === 'text') return n.value || '';
-                                                            if (n.children) return n.children.map(extractText).join('');
-                                                            return '';
-                                                        };
-                                                        const fullText = node ? extractText(node) : '';
-                                                        const isCurrent = /\(current\)/i.test(fullText);
+                                    if (isLogoPhase) {
+                                        return (
+                                            <div className="flex flex-col gap-5 mb-8" style={{ marginTop: '16px' }}>
+                                                {/* Upload zone */}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.3, delay: 0.05 }}
+                                                >
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        id="logo-upload"
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            const reader = new FileReader();
+                                                            reader.onload = () => {
+                                                                const dataUri = reader.result as string;
+                                                                append({
+                                                                    role: 'user',
+                                                                    content: `Here is my logo image as a data URI. Please embed it in the header replacing the text brand name. Then continue with Phase 1: ${dataUri}`,
+                                                                });
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                            e.target.value = '';
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => document.getElementById('logo-upload')?.click()}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '32px 20px',
+                                                            borderRadius: '16px',
+                                                            border: '2px dashed rgba(59,130,246,0.3)',
+                                                            background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            gap: '14px',
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(59,130,246,0.5)';
+                                                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.08))';
+                                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
+                                                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))';
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '52px',
+                                                            height: '52px',
+                                                            borderRadius: '16px',
+                                                            background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
+                                                            border: '1px solid rgba(59,130,246,0.2)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                        }}>
+                                                            <Upload className="w-6 h-6" style={{ color: '#60a5fa' }} />
+                                                        </div>
+                                                        <div style={{ textAlign: 'center' }}>
+                                                            <div style={{
+                                                                fontSize: '15px',
+                                                                fontWeight: 600,
+                                                                color: '#e4e4e7',
+                                                                marginBottom: '6px',
+                                                            }}>
+                                                                Drop your logo here
+                                                            </div>
+                                                            <div style={{
+                                                                fontSize: '12px',
+                                                                color: '#52525b',
+                                                            }}>
+                                                                PNG, SVG, or JPG — any size
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </motion.div>
 
-                                                        const strongNode = firstChild as any;
-                                                        const rawTitle = strongNode?.children?.[0]?.value || '';
-                                                        const titleText = rawTitle.replace(/\s*\(current\)\s*/i, '').trim();
-                                                        const isSkip = titleText.toLowerCase() === 'skip';
+                                                {/* Divider */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    padding: '0 4px',
+                                                }}>
+                                                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                                                    <span style={{ fontSize: '11px', fontWeight: 500, color: '#3f3f46', textTransform: 'uppercase', letterSpacing: '0.1em' }}>or</span>
+                                                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                                                </div>
 
-                                                        return (
-                                                            <motion.button
-                                                                initial={{ opacity: 0, y: 8 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                transition={{ duration: 0.25 }}
-                                                                className="w-full text-left transition-all duration-200 active:scale-[0.98] group"
+                                                {/* Text logo input */}
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.3, delay: 0.15 }}
+                                                >
+                                                    <div style={{
+                                                        padding: '28px 24px',
+                                                        borderRadius: '16px',
+                                                        border: '1px solid rgba(168,85,247,0.2)',
+                                                        background: 'linear-gradient(135deg, rgba(168,85,247,0.06), rgba(99,102,241,0.04))',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: '16px',
+                                                    }}>
+                                                        <div style={{
+                                                            width: '52px',
+                                                            height: '52px',
+                                                            borderRadius: '16px',
+                                                            background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.12))',
+                                                            border: '1px solid rgba(168,85,247,0.2)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: '22px',
+                                                        }}>
+                                                            ✨
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                                                            <div style={{
+                                                                fontSize: '15px',
+                                                                fontWeight: 600,
+                                                                color: '#e4e4e7',
+                                                                marginBottom: '6px',
+                                                            }}>
+                                                                Enter your logo text
+                                                            </div>
+                                                            <div style={{
+                                                                fontSize: '12px',
+                                                                color: '#52525b',
+                                                            }}>
+                                                                This will be styled as a premium text logo
+                                                            </div>
+                                                        </div>
+                                                        <form
+                                                            onSubmit={(e) => {
+                                                                e.preventDefault();
+                                                                if (!textLogoValue.trim()) return;
+                                                                append({
+                                                                    role: 'user',
+                                                                    content: `Use this as my text logo in the header: "${textLogoValue.trim()}". Style it with premium typography. Then continue with Phase 1.`,
+                                                                });
+                                                                setTextLogoValue('');
+                                                            }}
+                                                            className="flex items-center gap-2 w-full rounded-xl px-4"
+                                                            style={{
+                                                                background: 'rgba(255,255,255,0.06)',
+                                                                border: '1px solid rgba(168,85,247,0.2)',
+                                                            }}
+                                                        >
+                                                            <input
+                                                                value={textLogoValue}
+                                                                onChange={(e) => setTextLogoValue(e.target.value)}
+                                                                placeholder="e.g. LUXE COFFEE"
+                                                                className="flex-1 outline-none"
                                                                 style={{
-                                                                    background: isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
-                                                                    border: isCurrent ? '1px solid rgba(59,130,246,0.2)' : isSkip ? '1px dashed rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: '16px',
-                                                                    padding: '0',
-                                                                    overflow: 'hidden',
-                                                                    position: 'relative',
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    color: '#e4e4e7',
+                                                                    fontSize: '15px',
+                                                                    fontWeight: 600,
+                                                                    padding: '14px 0',
+                                                                    caretColor: '#a78bfa',
+                                                                    letterSpacing: '0.02em',
                                                                 }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.06)';
-                                                                    e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
-                                                                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.1)';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)';
-                                                                    e.currentTarget.style.borderColor = isCurrent ? 'rgba(59,130,246,0.2)' : isSkip ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.08)';
-                                                                    e.currentTarget.style.boxShadow = 'none';
-                                                                }}
-                                                                onClick={() => {
-                                                                    if (titleText.toLowerCase().includes('upload logo') || titleText.toLowerCase().includes('upload my logo')) {
-                                                                        setShowLogoUpload(true);
-                                                                        return;
-                                                                    }
-                                                                    if (titleText.toLowerCase().includes('text logo')) {
-                                                                        setShowTextLogo(true);
-                                                                        setTextLogoValue('');
-                                                                        return;
-                                                                    }
-                                                                    append({ role: 'user', content: isCurrent || isSkip ? 'Skip' : titleText });
+                                                            />
+                                                            <button
+                                                                type="submit"
+                                                                disabled={!textLogoValue.trim()}
+                                                                className="transition-colors duration-200"
+                                                                style={{
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    color: textLogoValue.trim() ? '#a78bfa' : '#3f3f46',
+                                                                    cursor: textLogoValue.trim() ? 'pointer' : 'default',
+                                                                    padding: '4px',
                                                                 }}
                                                             >
-                                                                <div style={{ padding: '16px 20px' }}>
-                                                                    {children}
-                                                                </div>
-                                                                {isCurrent && (
-                                                                    <div style={{
-                                                                        position: 'absolute',
-                                                                        top: '12px',
-                                                                        right: '14px',
-                                                                        fontSize: '10px',
-                                                                        fontWeight: 600,
-                                                                        letterSpacing: '0.08em',
-                                                                        textTransform: 'uppercase',
-                                                                        color: '#93c5fd',
-                                                                        background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
-                                                                        border: '1px solid rgba(96,165,250,0.2)',
-                                                                        borderRadius: '20px',
-                                                                        padding: '4px 12px',
-                                                                        backdropFilter: 'blur(8px)',
-                                                                        WebkitBackdropFilter: 'blur(8px)',
-                                                                        boxShadow: '0 0 12px rgba(59,130,246,0.08), inset 0 0.5px 0 rgba(255,255,255,0.06)',
-                                                                    }}>
-                                                                        Current
+                                                                <Send className="w-4 h-4" />
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </motion.div>
+
+                                                {/* Skip button */}
+                                                <motion.button
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ duration: 0.3, delay: 0.25 }}
+                                                    onClick={() => append({ role: 'user', content: 'Skip' })}
+                                                    style={{
+                                                        display: 'block',
+                                                        margin: '0 auto',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#52525b',
+                                                        fontSize: '12px',
+                                                        cursor: 'pointer',
+                                                        padding: '6px 16px',
+                                                        borderRadius: '8px',
+                                                        transition: 'color 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.color = '#a1a1aa'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.color = '#52525b'; }}
+                                                >
+                                                    Skip — I’ll add a logo later
+                                                </motion.button>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div className="flex flex-col gap-3 mb-8" style={{ marginTop: '10px' }}>
+                                            <ReactMarkdown
+                                                components={{
+                                                    ul: ({ children }) => <>{children}</>,
+                                                    ol: ({ children }) => <>{children}</>,
+                                                    li: ({ node, children }) => {
+                                                        const firstChild = node?.children?.[0];
+                                                        const isOption = firstChild && firstChild.type === 'element' && firstChild.tagName === 'strong';
+
+                                                        if (isOption) {
+                                                            const extractText = (n: any): string => {
+                                                                if (n.type === 'text') return n.value || '';
+                                                                if (n.children) return n.children.map(extractText).join('');
+                                                                return '';
+                                                            };
+                                                            const fullText = node ? extractText(node) : '';
+                                                            const isCurrent = /\(current\)/i.test(fullText);
+
+                                                            const strongNode = firstChild as any;
+                                                            const rawTitle = strongNode?.children?.[0]?.value || '';
+                                                            const titleText = rawTitle.replace(/\s*\(current\)\s*/i, '').trim();
+                                                            const isSkip = titleText.toLowerCase() === 'skip';
+
+                                                            return (
+                                                                <motion.button
+                                                                    initial={{ opacity: 0, y: 8 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    transition={{ duration: 0.25 }}
+                                                                    className="w-full text-left transition-all duration-200 active:scale-[0.98] group"
+                                                                    style={{
+                                                                        background: isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
+                                                                        border: isCurrent ? '1px solid rgba(59,130,246,0.2)' : isSkip ? '1px dashed rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.08)',
+                                                                        borderRadius: '16px',
+                                                                        padding: '0',
+                                                                        overflow: 'hidden',
+                                                                        position: 'relative',
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.06)';
+                                                                        e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
+                                                                        e.currentTarget.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.1)';
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)';
+                                                                        e.currentTarget.style.borderColor = isCurrent ? 'rgba(59,130,246,0.2)' : isSkip ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.08)';
+                                                                        e.currentTarget.style.boxShadow = 'none';
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        append({ role: 'user', content: isCurrent || isSkip ? 'Skip' : titleText });
+                                                                    }}
+                                                                >
+                                                                    <div style={{ padding: '16px 20px' }}>
+                                                                        {children}
                                                                     </div>
-                                                                )}
-                                                            </motion.button>
+                                                                    {isCurrent && (
+                                                                        <div style={{
+                                                                            position: 'absolute',
+                                                                            top: '12px',
+                                                                            right: '14px',
+                                                                            fontSize: '10px',
+                                                                            fontWeight: 600,
+                                                                            letterSpacing: '0.08em',
+                                                                            textTransform: 'uppercase',
+                                                                            color: '#93c5fd',
+                                                                            background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
+                                                                            border: '1px solid rgba(96,165,250,0.2)',
+                                                                            borderRadius: '20px',
+                                                                            padding: '4px 12px',
+                                                                            backdropFilter: 'blur(8px)',
+                                                                            WebkitBackdropFilter: 'blur(8px)',
+                                                                            boxShadow: '0 0 12px rgba(59,130,246,0.08), inset 0 0.5px 0 rgba(255,255,255,0.06)',
+                                                                        }}>
+                                                                            Current
+                                                                        </div>
+                                                                    )}
+                                                                </motion.button>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    },
+                                                    strong: ({ children }) => {
+                                                        const text = typeof children === 'string' ? children :
+                                                            Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
+                                                        const cleanText = text.replace(/\s*\(current\)\s*/i, '').trim();
+                                                        return (
+                                                            <span
+                                                                className="block"
+                                                                style={{
+                                                                    fontSize: '14px',
+                                                                    fontWeight: 700,
+                                                                    color: '#fafafa',
+                                                                    marginBottom: '4px',
+                                                                }}
+                                                            >
+                                                                {cleanText || children}
+                                                            </span>
                                                         );
-                                                    }
-                                                    return null;
-                                                },
-                                                strong: ({ children }) => {
-                                                    // Strip (current) from displayed title
-                                                    const text = typeof children === 'string' ? children :
-                                                        Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
-                                                    const cleanText = text.replace(/\s*\(current\)\s*/i, '').trim();
-                                                    return (
-                                                        <span
-                                                            className="block"
-                                                            style={{
-                                                                fontSize: '14px',
-                                                                fontWeight: 700,
-                                                                color: '#fafafa',
-                                                                marginBottom: '4px',
-                                                            }}
-                                                        >
-                                                            {cleanText || children}
-                                                        </span>
-                                                    );
-                                                },
-                                                p: ({ children }) => {
-                                                    // Strip (current) from description text too
-                                                    const stripCurrent = (child: any): any => {
-                                                        if (typeof child === 'string') return child.replace(/\s*\(current\)\s*/gi, '').trim();
-                                                        return child;
-                                                    };
-                                                    const cleaned = Array.isArray(children) ? children.map(stripCurrent) : stripCurrent(children);
-                                                    return (
-                                                        <span
-                                                            className="block"
-                                                            style={{
-                                                                fontSize: '12px',
-                                                                fontWeight: 400,
-                                                                color: '#71717a',
-                                                                lineHeight: 1.5,
-                                                            }}
-                                                        >
-                                                            {cleaned}
-                                                        </span>
-                                                    );
-                                                },
-                                            }}
-                                        >
-                                            {optionsPart}
-                                        </ReactMarkdown>
-                                    </div>
-                                )}
+                                                    },
+                                                    p: ({ children }) => {
+                                                        const stripCurrent = (child: any): any => {
+                                                            if (typeof child === 'string') return child.replace(/\s*\(current\)\s*/gi, '').trim();
+                                                            return child;
+                                                        };
+                                                        const cleaned = Array.isArray(children) ? children.map(stripCurrent) : stripCurrent(children);
+                                                        return (
+                                                            <span
+                                                                className="block"
+                                                                style={{
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 400,
+                                                                    color: '#71717a',
+                                                                    lineHeight: 1.5,
+                                                                }}
+                                                            >
+                                                                {cleaned}
+                                                            </span>
+                                                        );
+                                                    },
+                                                }}
+                                            >
+                                                {optionsPart}
+                                            </ReactMarkdown>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Inline loading status (when agent processes after a prior response) */}
                                 {isLoading && loadingStatus && (
@@ -446,236 +657,8 @@ export default function ChatPanel() {
                                     </div>
                                 )}
 
-                                {/* Input — ONLY visible when not loading and user input is needed */}
-                                {/* Logo Upload Zone — shown when user clicks 'Upload logo' option */}
-                                {showLogoUpload && !isLoading && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3, delay: 0.1 }}
-                                        style={{ marginTop: '32px' }}
-                                    >
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            id="logo-upload"
-                                            className="hidden"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                const reader = new FileReader();
-                                                reader.onload = () => {
-                                                    const dataUri = reader.result as string;
-                                                    setShowLogoUpload(false);
-                                                    append({
-                                                        role: 'user',
-                                                        content: `Here is my logo image as a data URI. Please embed it in the header replacing the text brand name. Then continue with Phase 1: ${dataUri}`,
-                                                    });
-                                                };
-                                                reader.readAsDataURL(file);
-                                                e.target.value = '';
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => document.getElementById('logo-upload')?.click()}
-                                            style={{
-                                                width: '100%',
-                                                padding: '32px 20px',
-                                                borderRadius: '16px',
-                                                border: '2px dashed rgba(59,130,246,0.3)',
-                                                background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '14px',
-                                                transition: 'all 0.2s ease',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.5)';
-                                                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.08))';
-                                                e.currentTarget.style.transform = 'translateY(-1px)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
-                                                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))';
-                                                e.currentTarget.style.transform = 'translateY(0)';
-                                            }}
-                                        >
-                                            <div style={{
-                                                width: '52px',
-                                                height: '52px',
-                                                borderRadius: '16px',
-                                                background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
-                                                border: '1px solid rgba(59,130,246,0.2)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            }}>
-                                                <Upload className="w-6 h-6" style={{ color: '#60a5fa' }} />
-                                            </div>
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div style={{
-                                                    fontSize: '15px',
-                                                    fontWeight: 600,
-                                                    color: '#e4e4e7',
-                                                    marginBottom: '6px',
-                                                }}>
-                                                    Drop your logo here
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '12px',
-                                                    color: '#52525b',
-                                                }}>
-                                                    PNG, SVG, or JPG — any size
-                                                </div>
-                                            </div>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowLogoUpload(false)}
-                                            style={{
-                                                display: 'block',
-                                                margin: '14px auto 0',
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#52525b',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                                padding: '4px 12px',
-                                                borderRadius: '8px',
-                                                transition: 'color 0.15s ease',
-                                            }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.color = '#a1a1aa'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.color = '#52525b'; }}
-                                        >
-                                            Cancel
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                {/* Text Logo Input Zone — shown when user clicks 'Text logo' option */}
-                                {showTextLogo && !isLoading && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3, delay: 0.1 }}
-                                        style={{ marginTop: '32px' }}
-                                    >
-                                        <div style={{
-                                            padding: '28px 24px',
-                                            borderRadius: '16px',
-                                            border: '1px solid rgba(168,85,247,0.2)',
-                                            background: 'linear-gradient(135deg, rgba(168,85,247,0.06), rgba(99,102,241,0.04))',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '16px',
-                                        }}>
-                                            <div style={{
-                                                width: '52px',
-                                                height: '52px',
-                                                borderRadius: '16px',
-                                                background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.12))',
-                                                border: '1px solid rgba(168,85,247,0.2)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '22px',
-                                            }}>
-                                                ✨
-                                            </div>
-                                            <div style={{ textAlign: 'center', marginBottom: '4px' }}>
-                                                <div style={{
-                                                    fontSize: '15px',
-                                                    fontWeight: 600,
-                                                    color: '#e4e4e7',
-                                                    marginBottom: '6px',
-                                                }}>
-                                                    Enter your logo text
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '12px',
-                                                    color: '#52525b',
-                                                }}>
-                                                    This will be styled as a premium text logo
-                                                </div>
-                                            </div>
-                                            <form
-                                                onSubmit={(e) => {
-                                                    e.preventDefault();
-                                                    if (!textLogoValue.trim()) return;
-                                                    setShowTextLogo(false);
-                                                    append({
-                                                        role: 'user',
-                                                        content: `Use this as my text logo in the header: "${textLogoValue.trim()}". Style it with premium typography. Then continue with Phase 1.`,
-                                                    });
-                                                }}
-                                                className="flex items-center gap-2 w-full rounded-xl px-4"
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.06)',
-                                                    border: '1px solid rgba(168,85,247,0.2)',
-                                                }}
-                                            >
-                                                <input
-                                                    autoFocus
-                                                    value={textLogoValue}
-                                                    onChange={(e) => setTextLogoValue(e.target.value)}
-                                                    placeholder="e.g. LUXE COFFEE"
-                                                    className="flex-1 outline-none"
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: '#e4e4e7',
-                                                        fontSize: '15px',
-                                                        fontWeight: 600,
-                                                        padding: '14px 0',
-                                                        caretColor: '#a78bfa',
-                                                        letterSpacing: '0.02em',
-                                                    }}
-                                                />
-                                                <button
-                                                    type="submit"
-                                                    disabled={!textLogoValue.trim()}
-                                                    className="transition-colors duration-200"
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: textLogoValue.trim() ? '#a78bfa' : '#3f3f46',
-                                                        cursor: textLogoValue.trim() ? 'pointer' : 'default',
-                                                        padding: '4px',
-                                                    }}
-                                                >
-                                                    <Send className="w-4 h-4" />
-                                                </button>
-                                            </form>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTextLogo(false)}
-                                            style={{
-                                                display: 'block',
-                                                margin: '14px auto 0',
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#52525b',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                                padding: '4px 12px',
-                                                borderRadius: '8px',
-                                                transition: 'color 0.15s ease',
-                                            }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.color = '#a1a1aa'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.color = '#52525b'; }}
-                                        >
-                                            Cancel
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                {/* Regular text input — hidden when logo upload or text logo zone is shown */}
-                                {showInput && !showLogoUpload && !showTextLogo && (
+                                {/* Regular text input */}
+                                {showInput && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}

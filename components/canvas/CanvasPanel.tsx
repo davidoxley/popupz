@@ -4,6 +4,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { motion } from "framer-motion";
 
+type DeviceMode = 'desktop' | 'tablet' | 'mobile';
+
+const DEVICE_WIDTHS: Record<DeviceMode, string> = {
+    desktop: '100%',
+    tablet: '768px',
+    mobile: '375px',
+};
+
 /**
  * Script injected into the AI-generated HTML inside the iframe.
  * Handles:
@@ -49,13 +57,17 @@ const INJECTED_SCRIPT = `
         }, 100);
     });
 
-    // 5. Handle broken images — hide and apply gradient fallback to parent
+    // 5. Handle broken images — swap to transparent pixel and show gradient fallback
     document.addEventListener('error', function(e) {
         if (e.target && e.target.tagName === 'IMG') {
-            e.target.style.display = 'none';
-            if (e.target.parentElement) {
-                e.target.parentElement.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
-                e.target.parentElement.style.minHeight = e.target.parentElement.style.minHeight || '120px';
+            e.target.onerror = null;
+            e.target.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+            e.target.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+            e.target.style.objectFit = 'cover';
+            e.target.alt = '';
+            // Ensure the element has a minimum height if no dimensions are set
+            if (!e.target.style.height && !e.target.getAttribute('height') && !e.target.className.match(/h-/)) {
+                e.target.style.minHeight = '200px';
             }
         }
     }, true);
@@ -133,7 +145,7 @@ function WowLoader() {
  *  - designMode editing (click any text to edit it inline)
  *  - Edit sync (changes are saved back to the store)
  */
-function WebsitePreview({ html }: { html: string }) {
+function WebsitePreview({ html, deviceMode = 'desktop' }: { html: string; deviceMode?: DeviceMode }) {
     const brandName = useStore((s) => s.config.input?.businessName || "mystore");
     const updateConfig = useStore((s) => s.updateConfig);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -191,39 +203,56 @@ function WebsitePreview({ html }: { html: string }) {
         return () => window.removeEventListener('message', handleMessage);
     }, [handleMessage]);
 
-    return (
-        <motion.div
-            key="website-preview"
-            initial={{ opacity: 0, y: 30, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full bg-white shadow-2xl overflow-hidden border border-zinc-200 flex flex-col min-h-[800px] transition-all duration-500"
-            style={{ borderRadius: '1.5rem' }}
-        >
-            {/* Browser chrome bar */}
-            <div className="h-10 bg-zinc-50 border-b border-zinc-200 flex items-center px-4 gap-2 shrink-0">
-                <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 max-w-md mx-auto h-6 bg-white rounded-md border border-zinc-200 flex items-center px-3">
-                    <span className="text-[10px] text-zinc-400 font-mono">
-                        https://{brandName.toLowerCase().replace(/\s+/g, "-")}.popupz.shop
-                    </span>
-                </div>
-            </div>
+    const isMobile = deviceMode === 'mobile';
+    const isTablet = deviceMode === 'tablet';
+    const isDevice = isMobile || isTablet;
 
-            {/* AI-generated HTML in isolated iframe with editing + nav blocking */}
-            <iframe
-                ref={iframeRef}
-                srcDoc={enhancedHtml}
-                title="Website Preview"
-                className="flex-1 w-full border-none"
-                style={{ minHeight: '760px' }}
-                sandbox="allow-scripts"
-            />
-        </motion.div>
+    return (
+        <div
+            className="flex justify-center w-full"
+            style={{ transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)' }}
+        >
+            <motion.div
+                key="website-preview"
+                initial={{ opacity: 0, y: 30, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="bg-white shadow-2xl overflow-hidden border border-zinc-200 flex flex-col transition-all duration-500 ease-out"
+                style={{
+                    borderRadius: isDevice ? '2rem' : '1.5rem',
+                    width: DEVICE_WIDTHS[deviceMode],
+                    maxWidth: '100%',
+                    minHeight: isMobile ? '667px' : isTablet ? '800px' : '800px',
+                    boxShadow: isDevice
+                        ? '0 0 0 8px #1a1a2e, 0 0 0 10px rgba(255,255,255,0.06), 0 25px 60px rgba(0,0,0,0.5)'
+                        : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                }}
+            >
+                {/* Browser chrome bar */}
+                <div className="h-10 bg-zinc-50 border-b border-zinc-200 flex items-center px-4 gap-2 shrink-0">
+                    <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                    </div>
+                    <div className="flex-1 max-w-md mx-auto h-6 bg-white rounded-md border border-zinc-200 flex items-center px-3">
+                        <span className="text-[10px] text-zinc-400 font-mono truncate">
+                            https://{brandName.toLowerCase().replace(/\s+/g, "-")}.popupz.shop
+                        </span>
+                    </div>
+                </div>
+
+                {/* AI-generated HTML in isolated iframe with editing + nav blocking */}
+                <iframe
+                    ref={iframeRef}
+                    srcDoc={enhancedHtml}
+                    title="Website Preview"
+                    className="flex-1 w-full border-none"
+                    style={{ minHeight: isMobile ? '627px' : isTablet ? '760px' : '760px' }}
+                    sandbox="allow-scripts"
+                />
+            </motion.div>
+        </div>
     );
 }
 
@@ -334,7 +363,7 @@ function VersionStrip() {
     if (versions.length <= 1) return null;
 
     return (
-        <div className="flex items-center gap-1.5 flex-wrap" style={{ marginTop: '-10px', marginBottom: '10px' }}>
+        <div className="flex items-center gap-1.5 flex-wrap">
             {versions.map((v, i) => (
                 <VersionThumbnail
                     key={i}
@@ -350,6 +379,83 @@ function VersionStrip() {
 
 
 /**
+ * Device view selector — mobile, tablet, desktop toggle icons.
+ */
+function DeviceViewSelector({ mode, onChange }: { mode: DeviceMode; onChange: (mode: DeviceMode) => void }) {
+    const devices: { id: DeviceMode; label: string; icon: React.ReactNode }[] = [
+        {
+            id: 'mobile',
+            label: 'Mobile (375px)',
+            icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12" y2="18" />
+                </svg>
+            ),
+        },
+        {
+            id: 'tablet',
+            label: 'Tablet (768px)',
+            icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12" y2="18" />
+                </svg>
+            ),
+        },
+        {
+            id: 'desktop',
+            label: 'Desktop (full)',
+            icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+            ),
+        },
+    ];
+
+    return (
+        <div className="flex items-center gap-1" style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '8px',
+            padding: '3px',
+        }}>
+            {devices.map((device) => {
+                const isActive = mode === device.id;
+                return (
+                    <button
+                        key={device.id}
+                        onClick={() => onChange(device.id)}
+                        title={device.label}
+                        style={{
+                            width: '28px',
+                            height: '24px',
+                            borderRadius: '5px',
+                            border: isActive ? '1px solid rgba(59,130,246,0.4)' : '1px solid transparent',
+                            background: isActive
+                                ? 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.15))'
+                                : 'transparent',
+                            color: isActive ? '#93c5fd' : '#52525b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        {device.icon}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+
+/**
  * Main CanvasPanel — gate: WowLoader until homepageDraft.html exists.
  * Zero static templates. The AI generates the ENTIRE page.
  */
@@ -357,6 +463,7 @@ export default function CanvasPanel() {
     const homepageDraft = useStore((state) => state.config.homepageDraft);
     const versions = useStore((state) => state.htmlVersions);
     const activeIndex = useStore((state) => state.activeVersionIndex);
+    const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
 
     if (!homepageDraft?.html) {
         return <WowLoader />;
@@ -373,10 +480,14 @@ export default function CanvasPanel() {
         : homepageDraft.html;
 
     return (
-        <div className="min-h-full p-8 flex flex-col items-center overflow-y-auto w-full" style={{ background: '#050505' }}>
+        <div className="min-h-full pt-[25px] pb-8 px-8 flex flex-col items-center overflow-y-auto w-full" style={{ background: '#050505' }}>
             <div className="w-full max-w-5xl">
-                <VersionStrip />
-                <WebsitePreview html={displayHtml} />
+                {/* Toolbar: version strip left, device icons right */}
+                <div className="flex items-center justify-between mb-[10px]" style={{ minHeight: '28px' }}>
+                    <VersionStrip />
+                    <DeviceViewSelector mode={deviceMode} onChange={setDeviceMode} />
+                </div>
+                <WebsitePreview html={displayHtml} deviceMode={deviceMode} />
             </div>
         </div>
     );

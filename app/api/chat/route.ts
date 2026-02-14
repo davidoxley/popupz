@@ -2,6 +2,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { loadDesignDocuments } from '@/lib/loadDesignDocs';
+import fs from 'fs';
+import path from 'path';
 
 export const maxDuration = 300;
 
@@ -50,8 +52,24 @@ The generated HTML is rendered inside an iframe preview. It must be a COMPLETE s
 
 IMAGES RULE
 Use real external images where possible (e.g. unsplash, pexels).
-On EVERY <img> tag, add: onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'"
-This ensures broken images are hidden and replaced with an elegant gradient — never show a broken image icon.
+If you cannot find or are unsure about a real image URL, call the searchLocalImages tool with a descriptive query
+to find a matching image from the local stock library. Use the returned path (e.g. /images/stock/conference-room.jpg)
+as the src attribute. Local images are served from the same origin and are always available.
+
+IMAGE SIZING — CRITICAL:
+Every <img> MUST have explicit, RESPONSIVE dimensions so that if the image fails to load,
+the fallback gradient occupies the same space the real image would have.
+Use ONLY responsive-safe sizing — never fixed pixel widths that overflow on mobile:
+- PREFERRED: class="w-full aspect-video object-cover" (fluid width + aspect ratio)
+- GOOD: class="w-full h-48 sm:h-64 md:h-80 object-cover" (responsive height breakpoints)
+- ACCEPTABLE: style="width:100%;aspect-ratio:16/9;object-fit:cover"
+- NEVER: width="800" height="400" or style="width:800px" (breaks on mobile)
+NEVER leave an <img> without explicit sizing. Always use object-cover to prevent distortion.
+
+On EVERY <img> tag, add this exact onerror handler:
+onerror="this.onerror=null;this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)';this.alt=''"
+This swaps the broken image for a transparent 1x1 pixel (so the element retains its CSS dimensions)
+and shows an elegant gradient in its place. Never use display:none — that collapses the space.
 
 ═══════════════════════════════════
 CRITICAL STOP RULE — READ THIS FIRST
@@ -197,16 +215,34 @@ DESIGN QUALITY REQUIREMENTS:
 - Use Tailwind CSS classes extensively for layout, spacing, typography, colors
 - Include smooth CSS transitions and hover effects on EVERY interactive element
 - Use proper semantic HTML (header, nav, main, section, footer)
-- Ensure responsive design (mobile-first)
 - Use CSS custom properties for the color system
 - Add subtle background gradients, shadows, and visual depth
 - Icons: Use inline SVG for any icons (do NOT reference external icon libraries)
 - Images: Use Unsplash source URLs formatted as https://images.unsplash.com/photo-[ID]?w=800&h=600&fit=crop
-  If you are unsure about a photo ID, use https://source.unsplash.com/800x600/?[keyword] as fallback
+  If you are unsure about a photo ID, call searchLocalImages as fallback
 - EVERY section must have SUBSTANTIAL content — avoid empty/thin sections
-- Use generous padding (py-16 to py-24 on sections), proper typography hierarchy
 - Include micro-interactions: button hover scales, card hover shadows, smooth scroll behavior
 - The page should feel RICH, FULL, and COMPLETE — not a skeleton or wireframe
+
+MOBILE-FIRST RESPONSIVE DESIGN — MANDATORY:
+The page MUST be fully responsive from 320px to 1920px+ viewports. This is NON-NEGOTIABLE.
+- Include <meta name="viewport" content="width=device-width, initial-scale=1"> in the <head>
+- Build mobile-first: start with single-column, then add grid/flex breakpoints for larger screens
+- GRIDS: Use responsive grid classes: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
+  NEVER use a fixed multi-column grid without a single-column mobile fallback
+- TYPOGRAPHY: Use responsive text sizes: text-2xl sm:text-3xl md:text-4xl lg:text-5xl for headings
+  Body text: text-sm sm:text-base. Never use text larger than text-xl on mobile.
+- SPACING: Use responsive padding: px-4 sm:px-6 lg:px-8 on containers, py-12 sm:py-16 md:py-24 on sections
+  Never use padding > px-6 without a smaller mobile breakpoint
+- NAVIGATION: On mobile (< md), collapse nav links into a hamburger menu or hide secondary links.
+  The nav must not overflow or wrap awkwardly on small screens.
+- IMAGES: Always use w-full with aspect-ratio or responsive height classes. Never fixed pixel widths.
+  Use object-cover to prevent stretching/distortion.
+- BUTTONS & TOUCH TARGETS: Minimum touch target 44x44px on mobile (min-h-[44px] px-4 py-3)
+- CONTAINERS: Use max-w-7xl mx-auto with responsive horizontal padding
+- HERO: Hero sections should adapt height: h-[60vh] sm:h-[70vh] md:h-screen, with text centering
+- OVERFLOW: Never allow horizontal scroll. Test all text, grids, and images for overflow.
+- FLEX WRAP: Use flex-wrap on flex containers with multiple items so they stack on mobile
 
 FINAL CTA (if no products provided):
 Include this exact line: "Add your products to unlock your full storefront."
@@ -264,6 +300,58 @@ Speak as a world-class ecommerce design director. Concise, authoritative, elegan
                     description: 'Mark the store as complete and ready for launch',
                     parameters: z.object({}),
                     // NO execute function — client-side only
+                }),
+                searchLocalImages: tool({
+                    description: 'Search the local stock image library for images matching a query. Use this as a fallback when you cannot find or are unsure about external image URLs. Returns image paths relative to the site root that are always available.',
+                    parameters: z.object({
+                        query: z.string().describe('Descriptive search query, e.g. "conference room" or "team collaboration"'),
+                        limit: z.number().optional().describe('Max results to return (default 3)'),
+                        category: z.string().optional().describe('Filter by category: workspace, people, events, technology'),
+                    }),
+                    execute: async ({ query, limit = 3, category }) => {
+                        try {
+                            const manifestPath = path.join(process.cwd(), 'public', 'images', 'stock', 'manifest.json');
+                            const raw = fs.readFileSync(manifestPath, 'utf-8');
+                            const manifest = JSON.parse(raw);
+                            let images = manifest.images as any[];
+
+                            if (category) {
+                                images = images.filter((img: any) => img.category.toLowerCase() === category.toLowerCase());
+                            }
+
+                            const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+                            const scored = images.map((img: any) => {
+                                let score = 0;
+                                for (const term of terms) {
+                                    if (img.title.toLowerCase().includes(term)) score += 3;
+                                    if (img.tags.some((t: string) => t === term)) score += 2;
+                                    if (img.tags.some((t: string) => t.includes(term) || term.includes(t))) score += 1;
+                                    if (img.description.toLowerCase().includes(term)) score += 1;
+                                    if (img.category.toLowerCase().includes(term)) score += 2;
+                                }
+                                return { ...img, score };
+                            })
+                                .filter((s: any) => s.score > 0)
+                                .sort((a: any, b: any) => b.score - a.score)
+                                .slice(0, limit);
+
+                            console.log(`🖼️ Local image search: "${query}" → ${scored.length} results`);
+
+                            return {
+                                results: scored.map((s: any) => ({
+                                    path: s.path,
+                                    title: s.title,
+                                    description: s.description,
+                                    category: s.category,
+                                })),
+                                total: scored.length,
+                                tip: 'Use the path value directly as the <img src="..."> attribute.',
+                            };
+                        } catch (err) {
+                            console.error('❌ Local image search error:', err);
+                            return { results: [], total: 0, error: 'Failed to search local images' };
+                        }
+                    },
                 }),
             },
             onStepFinish: ({ finishReason, usage, toolCalls, text }) => {
