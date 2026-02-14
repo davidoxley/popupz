@@ -48,6 +48,11 @@ GOAL
 Create a stunning, CATEGORY-SPECIFIC eStore homepage as a complete, self-contained HTML document.
 The generated HTML is rendered inside an iframe preview. It must be a COMPLETE standalone HTML document.
 
+IMAGES RULE
+Use real external images where possible (e.g. unsplash, pexels).
+On EVERY <img> tag, add: onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'"
+This ensures broken images are hidden and replaced with an elegant gradient — never show a broken image icon.
+
 ═══════════════════════════════════
 CRITICAL STOP RULE — READ THIS FIRST
 ═══════════════════════════════════
@@ -89,7 +94,7 @@ Apply your design decisions directly — premium colors, typography, spacing, mi
 Step 4: Call updateConfig with homepageDraft.html.
 
 Step 5: Send ONE short message confirming the draft is live.
-Then IMMEDIATELY present the FIRST design refinement question (Phase 1: Objective).
+Then IMMEDIATELY present the LOGO question (Phase 0: Logo).
 
 SPEED IS CRITICAL. Do NOT add unnecessary steps.
 
@@ -98,6 +103,18 @@ STAGE B — INTERACTIVE (one question at a time)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 After the initial preview is live, step through design refinements ONE AT A TIME:
+
+Phase 0: Logo
+  Present this EXACT question: "How would you like your brand logo to appear?"
+  Options:
+  1. **Upload logo** I'll upload my logo image
+  2. **Text logo** Use my brand name as a styled text logo
+  3. **Skip** I'll add a logo later
+  If the user picks "Upload logo": The UI will handle it — the user will upload a file and you will receive a data URI.
+  When you receive a data URI image, embed it directly as an <img src="data:..." /> in the header, replacing the text brand name. Regenerate the full HTML and call updateConfig. Then continue with Phase 1.
+  If the user picks "Text logo": The UI will handle it — the user will type their logo text and you will receive it.
+  When you receive a text logo request, style it using premium typography in the header. Regenerate the full HTML and call updateConfig. Then continue with Phase 1.
+  If the user picks "Skip": move to Phase 1.
 
 Phase 1: Objective
 Phase 2: Brand Positioning
@@ -108,7 +125,7 @@ Phase 6: Navigation model
 Phase 7: Animation rules
 Phase 8: Scroll behaviour
 
-FOR EACH PHASE:
+FOR EACH PHASE (1-8):
 1. Present EXACTLY 4 design options PLUS a 5th "Skip" option.
    - Mark the currently applied option with "(current)" after its bold name.
    - The 5th option MUST always be: **Skip** I am happy with how it is!
@@ -138,7 +155,7 @@ REMEMBER: ONE PHASE PER MESSAGE. STOP AFTER PRESENTING OPTIONS. NEVER AUTO-ADVAN
 STAGE C — COMPLETION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-After all 8 phases are complete, send a final message:
+After all phases are complete, send a final message:
 "Your homepage is perfected. Subscribe to lock in this design and launch your store."
 
 ═══════════════════════════════════
@@ -155,7 +172,10 @@ The HTML must be a full <!DOCTYPE html> document that includes:
 
 MANDATORY SECTIONS — FULL SALES FUNNEL (adapt order to category):
 The homepage must be structured as a complete sales funnel that guides the visitor from awareness to action:
-- Header/Navigation with brand name, nav links, cart icon
+- Header/Navigation with brand name or logo, and MAX 3-4 nav links plus cart icon
+  IMPORTANT: Keep the navigation bar MINIMAL and CLEAN. Never exceed 4 nav links.
+  Good: Home, Shop, About, Contact
+  Bad: Home, Shop, New Arrivals, Collections, Best Sellers, Sale, About, Contact, Blog, FAQ
 - Hero section with compelling headline, subtitle, CTA button (attention + desire)
 - Collections or Categories section (discovery)
 - Featured Products section (real products if provided, or placeholder cards)

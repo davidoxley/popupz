@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDesignAgent } from "@/lib/useDesignAgent";
-import { Send, Sparkles, CheckCircle2 } from "lucide-react";
+import { Send, Sparkles, CheckCircle2, Upload } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import {
     Dialog,
@@ -46,6 +46,9 @@ function PulsingDots({ color = '#3b82f6' }: { color?: string }) {
 export default function ChatPanel() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [showLogoUpload, setShowLogoUpload] = useState(false);
+    const [showTextLogo, setShowTextLogo] = useState(false);
+    const [textLogoValue, setTextLogoValue] = useState('');
 
     const chat = useDesignAgent();
     const { messages, input, handleInputChange, handleSubmit, isLoading, isComplete, reload, error, append, setInput, loadingStatus, loadingDetail } = chat;
@@ -302,6 +305,15 @@ export default function ChatPanel() {
                                                                     e.currentTarget.style.boxShadow = 'none';
                                                                 }}
                                                                 onClick={() => {
+                                                                    if (titleText.toLowerCase().includes('upload logo') || titleText.toLowerCase().includes('upload my logo')) {
+                                                                        setShowLogoUpload(true);
+                                                                        return;
+                                                                    }
+                                                                    if (titleText.toLowerCase().includes('text logo')) {
+                                                                        setShowTextLogo(true);
+                                                                        setTextLogoValue('');
+                                                                        return;
+                                                                    }
                                                                     append({ role: 'user', content: isCurrent || isSkip ? 'Skip' : titleText });
                                                                 }}
                                                             >
@@ -435,7 +447,235 @@ export default function ChatPanel() {
                                 )}
 
                                 {/* Input — ONLY visible when not loading and user input is needed */}
-                                {showInput && (
+                                {/* Logo Upload Zone — shown when user clicks 'Upload logo' option */}
+                                {showLogoUpload && !isLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: 0.1 }}
+                                        style={{ marginTop: '32px' }}
+                                    >
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            id="logo-upload"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onload = () => {
+                                                    const dataUri = reader.result as string;
+                                                    setShowLogoUpload(false);
+                                                    append({
+                                                        role: 'user',
+                                                        content: `Here is my logo image as a data URI. Please embed it in the header replacing the text brand name. Then continue with Phase 1: ${dataUri}`,
+                                                    });
+                                                };
+                                                reader.readAsDataURL(file);
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('logo-upload')?.click()}
+                                            style={{
+                                                width: '100%',
+                                                padding: '32px 20px',
+                                                borderRadius: '16px',
+                                                border: '2px dashed rgba(59,130,246,0.3)',
+                                                background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '14px',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.5)';
+                                                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.08))';
+                                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
+                                                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '52px',
+                                                height: '52px',
+                                                borderRadius: '16px',
+                                                background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
+                                                border: '1px solid rgba(59,130,246,0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}>
+                                                <Upload className="w-6 h-6" style={{ color: '#60a5fa' }} />
+                                            </div>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{
+                                                    fontSize: '15px',
+                                                    fontWeight: 600,
+                                                    color: '#e4e4e7',
+                                                    marginBottom: '6px',
+                                                }}>
+                                                    Drop your logo here
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '12px',
+                                                    color: '#52525b',
+                                                }}>
+                                                    PNG, SVG, or JPG — any size
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLogoUpload(false)}
+                                            style={{
+                                                display: 'block',
+                                                margin: '14px auto 0',
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#52525b',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                padding: '4px 12px',
+                                                borderRadius: '8px',
+                                                transition: 'color 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.color = '#a1a1aa'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.color = '#52525b'; }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </motion.div>
+                                )}
+
+                                {/* Text Logo Input Zone — shown when user clicks 'Text logo' option */}
+                                {showTextLogo && !isLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: 0.1 }}
+                                        style={{ marginTop: '32px' }}
+                                    >
+                                        <div style={{
+                                            padding: '28px 24px',
+                                            borderRadius: '16px',
+                                            border: '1px solid rgba(168,85,247,0.2)',
+                                            background: 'linear-gradient(135deg, rgba(168,85,247,0.06), rgba(99,102,241,0.04))',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '16px',
+                                        }}>
+                                            <div style={{
+                                                width: '52px',
+                                                height: '52px',
+                                                borderRadius: '16px',
+                                                background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.12))',
+                                                border: '1px solid rgba(168,85,247,0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '22px',
+                                            }}>
+                                                ✨
+                                            </div>
+                                            <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                                                <div style={{
+                                                    fontSize: '15px',
+                                                    fontWeight: 600,
+                                                    color: '#e4e4e7',
+                                                    marginBottom: '6px',
+                                                }}>
+                                                    Enter your logo text
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '12px',
+                                                    color: '#52525b',
+                                                }}>
+                                                    This will be styled as a premium text logo
+                                                </div>
+                                            </div>
+                                            <form
+                                                onSubmit={(e) => {
+                                                    e.preventDefault();
+                                                    if (!textLogoValue.trim()) return;
+                                                    setShowTextLogo(false);
+                                                    append({
+                                                        role: 'user',
+                                                        content: `Use this as my text logo in the header: "${textLogoValue.trim()}". Style it with premium typography. Then continue with Phase 1.`,
+                                                    });
+                                                }}
+                                                className="flex items-center gap-2 w-full rounded-xl px-4"
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.06)',
+                                                    border: '1px solid rgba(168,85,247,0.2)',
+                                                }}
+                                            >
+                                                <input
+                                                    autoFocus
+                                                    value={textLogoValue}
+                                                    onChange={(e) => setTextLogoValue(e.target.value)}
+                                                    placeholder="e.g. LUXE COFFEE"
+                                                    className="flex-1 outline-none"
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#e4e4e7',
+                                                        fontSize: '15px',
+                                                        fontWeight: 600,
+                                                        padding: '14px 0',
+                                                        caretColor: '#a78bfa',
+                                                        letterSpacing: '0.02em',
+                                                    }}
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    disabled={!textLogoValue.trim()}
+                                                    className="transition-colors duration-200"
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: textLogoValue.trim() ? '#a78bfa' : '#3f3f46',
+                                                        cursor: textLogoValue.trim() ? 'pointer' : 'default',
+                                                        padding: '4px',
+                                                    }}
+                                                >
+                                                    <Send className="w-4 h-4" />
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTextLogo(false)}
+                                            style={{
+                                                display: 'block',
+                                                margin: '14px auto 0',
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#52525b',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                padding: '4px 12px',
+                                                borderRadius: '8px',
+                                                transition: 'color 0.15s ease',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.color = '#a1a1aa'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.color = '#52525b'; }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </motion.div>
+                                )}
+
+                                {/* Regular text input — hidden when logo upload or text logo zone is shown */}
+                                {showInput && !showLogoUpload && !showTextLogo && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}

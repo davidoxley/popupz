@@ -64,12 +64,12 @@ interface StoreState {
     query: string;
     config: StorefrontConfig;
     isComplete: boolean;
-    htmlVersions: string[];
+    htmlVersions: { html: string; label: string }[];
     activeVersionIndex: number;
     setQuery: (query: string) => void;
     updateConfig: (delta: Partial<StorefrontConfig> | ((prev: StorefrontConfig) => StorefrontConfig)) => void;
     setComplete: (complete: boolean) => void;
-    addVersion: (html: string) => void;
+    addVersion: (html: string, label: string) => void;
     setActiveVersion: (index: number) => void;
 }
 
@@ -86,8 +86,8 @@ export const useStore = create<StoreState>((set) => ({
         config: typeof delta === 'function' ? delta(state.config) : { ...state.config, ...delta }
     })),
     setComplete: (isComplete) => set({ isComplete }),
-    addVersion: (html) => set((state) => {
-        const newVersions = [...state.htmlVersions, html];
+    addVersion: (html, label) => set((state) => {
+        const newVersions = [...state.htmlVersions, { html, label }];
         return { htmlVersions: newVersions, activeVersionIndex: newVersions.length - 1 };
     }),
     setActiveVersion: (index) => set({ activeVersionIndex: index }),

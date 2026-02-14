@@ -58,6 +58,7 @@ export function useDesignAgent() {
     const toolCallCount = useRef(0);
     const [subDetail, setSubDetail] = useState("");
     const subDetailIndex = useRef(0);
+    const lastUserMsgRef = useRef<string>('');
 
     const chat = useChat({
         api: '/api/chat',
@@ -93,11 +94,6 @@ export function useDesignAgent() {
                         console.log('   🔬 market:', delta.marketResearch.inferredCategory, '/', delta.marketResearch.inferredPricePosition);
                     }
 
-                    // Track version history
-                    if (delta.homepageDraft?.html) {
-                        addVersion(delta.homepageDraft.html);
-                    }
-
                     const newConfig = {
                         ...prev,
                         input: delta.input ? { ...prev.input, ...delta.input } : prev.input,
@@ -109,6 +105,22 @@ export function useDesignAgent() {
 
                     return newConfig;
                 });
+
+                // Track version history AFTER updateConfig completes (avoid nested set() calls)
+                if (delta.homepageDraft?.html) {
+                    const versionCount = useStore.getState().htmlVersions.length;
+                    let label: string;
+                    if (versionCount === 0) {
+                        label = 'Initial homepage draft';
+                    } else {
+                        const sel = lastUserMsgRef.current;
+                        label = sel && sel.length > 0
+                            ? (sel.length > 40 ? sel.slice(0, 37) + '...' : sel)
+                            : `Design update #${versionCount + 1}`;
+                    }
+                    addVersion(delta.homepageDraft.html, label);
+                }
+
                 return { status: 'success', updated: Object.keys(delta) };
             } else if (toolCall.toolName === 'completeStore') {
                 setComplete(true);
@@ -119,6 +131,14 @@ export function useDesignAgent() {
             console.log(`✅ Chat finished. Total tool calls: ${toolCallCount.current}`);
         }
     });
+
+    // Track the last user message for version labels
+    useEffect(() => {
+        const lastUser = chat.messages.filter(m => m.role === 'user').pop();
+        if (lastUser && typeof lastUser.content === 'string') {
+            lastUserMsgRef.current = lastUser.content;
+        }
+    }, [chat.messages]);
 
     const getLoadingStatus = () => {
         if (!chat.isLoading) return "";

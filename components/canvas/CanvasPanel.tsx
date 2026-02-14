@@ -49,14 +49,14 @@ const INJECTED_SCRIPT = `
         }, 100);
     });
 
-    // 5. Handle broken images — replace with styled placeholder
+    // 5. Handle broken images — hide and apply gradient fallback to parent
     document.addEventListener('error', function(e) {
         if (e.target && e.target.tagName === 'IMG') {
-            var img = e.target;
-            var placeholder = document.createElement('div');
-            placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:linear-gradient(135deg,#f0f0f0,#e0e0e0);color:#a1a1aa;width:' + (img.width || 300) + 'px;height:' + (img.height || 200) + 'px;min-height:120px;border-radius:12px;font-size:12px;font-family:sans-serif;';
-            placeholder.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>Image unavailable</span>';
-            if (img.parentNode) img.parentNode.replaceChild(placeholder, img);
+            e.target.style.display = 'none';
+            if (e.target.parentElement) {
+                e.target.parentElement.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+                e.target.parentElement.style.minHeight = e.target.parentElement.style.minHeight || '120px';
+            }
         }
     }, true);
 })();
@@ -227,6 +227,100 @@ function WebsitePreview({ html }: { html: string }) {
     );
 }
 
+/**
+ * A single version thumbnail with a custom tooltip.
+ */
+function VersionThumbnail({ index, label, isActive, onClick }: {
+    index: number;
+    label: string;
+    isActive: boolean;
+    onClick: () => void;
+}) {
+    const [hovered, setHovered] = useState(false);
+
+    return (
+        <div style={{ position: 'relative' }}>
+            <button
+                onClick={onClick}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '4px',
+                    border: isActive ? '1.5px solid rgba(59,130,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                    background: isActive
+                        ? 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(99,102,241,0.2))'
+                        : 'rgba(255,255,255,0.04)',
+                    color: isActive ? '#93c5fd' : '#52525b',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isActive ? '0 0 8px rgba(59,130,246,0.15)' : 'none',
+                }}
+            >
+                {index + 1}
+            </button>
+
+            {/* Modern glassmorphism tooltip */}
+            {hovered && (
+                <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        marginTop: '8px',
+                        width: '200px',
+                        pointerEvents: 'none',
+                        zIndex: 50,
+                    }}
+                >
+                    {/* Tooltip arrow */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        left: '50%',
+                        transform: 'translateX(-50%) rotate(45deg)',
+                        width: '8px',
+                        height: '8px',
+                        background: 'rgba(15,15,20,0.92)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderBottom: 'none',
+                        borderRight: 'none',
+                    }} />
+                    <div style={{
+                        background: 'linear-gradient(135deg, rgba(15,15,20,0.92), rgba(25,25,35,0.88))',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '10px',
+                        padding: '8px 14px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.04) inset',
+                    }}>
+                        <div style={{
+                            fontSize: '11px',
+                            fontWeight: 400,
+                            color: '#a1a1aa',
+                            lineHeight: 1.4,
+                        }}>
+                            {label}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </div>
+    );
+}
+
 
 /**
  * Version history thumbnail strip.
@@ -240,51 +334,16 @@ function VersionStrip() {
     if (versions.length <= 1) return null;
 
     return (
-        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-            {versions.map((_, i) => {
-                const isActive = i === activeIndex;
-                return (
-                    <button
-                        key={i}
-                        onClick={() => setActiveVersion(i)}
-                        title={`Version ${i + 1}`}
-                        style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '4px',
-                            border: isActive ? '1.5px solid rgba(59,130,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
-                            background: isActive
-                                ? 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(99,102,241,0.2))'
-                                : 'rgba(255,255,255,0.04)',
-                            color: isActive ? '#93c5fd' : '#52525b',
-                            fontSize: '9px',
-                            fontWeight: 700,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            boxShadow: isActive ? '0 0 8px rgba(59,130,246,0.15)' : 'none',
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!isActive) {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
-                                e.currentTarget.style.color = '#a1a1aa';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!isActive) {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                                e.currentTarget.style.color = '#52525b';
-                            }
-                        }}
-                    >
-                        {i + 1}
-                    </button>
-                );
-            })}
+        <div className="flex items-center gap-1.5 flex-wrap" style={{ marginTop: '-10px', marginBottom: '10px' }}>
+            {versions.map((v, i) => (
+                <VersionThumbnail
+                    key={i}
+                    index={i}
+                    label={v.label}
+                    isActive={i === activeIndex}
+                    onClick={() => setActiveVersion(i)}
+                />
+            ))}
         </div>
     );
 }
@@ -303,9 +362,14 @@ export default function CanvasPanel() {
         return <WowLoader />;
     }
 
-    // Show the actively selected version, or latest if none selected
-    const displayHtml = activeIndex >= 0 && activeIndex < versions.length
-        ? versions[activeIndex]
+    // If user clicked an older version thumbnail, show that version.
+    // Otherwise, always show the latest homepageDraft.html (the live source of truth).
+    const isViewingOldVersion = activeIndex >= 0
+        && activeIndex < versions.length
+        && activeIndex < versions.length - 1;
+
+    const displayHtml = isViewingOldVersion
+        ? versions[activeIndex].html
         : homepageDraft.html;
 
     return (
