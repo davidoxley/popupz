@@ -64,9 +64,13 @@ interface StoreState {
     query: string;
     config: StorefrontConfig;
     isComplete: boolean;
+    htmlVersions: string[];
+    activeVersionIndex: number;
     setQuery: (query: string) => void;
     updateConfig: (delta: Partial<StorefrontConfig> | ((prev: StorefrontConfig) => StorefrontConfig)) => void;
     setComplete: (complete: boolean) => void;
+    addVersion: (html: string) => void;
+    setActiveVersion: (index: number) => void;
 }
 
 const initialConfig: StorefrontConfig = {};
@@ -75,9 +79,16 @@ export const useStore = create<StoreState>((set) => ({
     query: '',
     config: initialConfig,
     isComplete: false,
+    htmlVersions: [],
+    activeVersionIndex: -1,
     setQuery: (query) => set({ query }),
     updateConfig: (delta) => set((state) => ({
         config: typeof delta === 'function' ? delta(state.config) : { ...state.config, ...delta }
     })),
     setComplete: (isComplete) => set({ isComplete }),
+    addVersion: (html) => set((state) => {
+        const newVersions = [...state.htmlVersions, html];
+        return { htmlVersions: newVersions, activeVersionIndex: newVersions.length - 1 };
+    }),
+    setActiveVersion: (index) => set({ activeVersionIndex: index }),
 }));

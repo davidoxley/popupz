@@ -54,7 +54,7 @@ const STAGE_DETAILS: Record<string, string[]> = {
 };
 
 export function useDesignAgent() {
-    const { query, updateConfig, setComplete, isComplete, config } = useStore();
+    const { query, updateConfig, setComplete, isComplete, config, addVersion } = useStore();
     const toolCallCount = useRef(0);
     const [subDetail, setSubDetail] = useState("");
     const subDetailIndex = useRef(0);
@@ -91,6 +91,11 @@ export function useDesignAgent() {
                     }
                     if (delta.marketResearch) {
                         console.log('   🔬 market:', delta.marketResearch.inferredCategory, '/', delta.marketResearch.inferredPricePosition);
+                    }
+
+                    // Track version history
+                    if (delta.homepageDraft?.html) {
+                        addVersion(delta.homepageDraft.html);
                     }
 
                     const newConfig = {

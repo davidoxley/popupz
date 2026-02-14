@@ -263,13 +263,18 @@ export default function ChatPanel() {
                                                     const isOption = firstChild && firstChild.type === 'element' && firstChild.tagName === 'strong';
 
                                                     if (isOption) {
+                                                        // Extract ALL text from the entire node to detect (current) anywhere
+                                                        const extractText = (n: any): string => {
+                                                            if (n.type === 'text') return n.value || '';
+                                                            if (n.children) return n.children.map(extractText).join('');
+                                                            return '';
+                                                        };
+                                                        const fullText = node ? extractText(node) : '';
+                                                        const isCurrent = /\(current\)/i.test(fullText);
+
                                                         const strongNode = firstChild as any;
                                                         const rawTitle = strongNode?.children?.[0]?.value || '';
-                                                        // Strip (current) from the title for the click action
                                                         const titleText = rawTitle.replace(/\s*\(current\)\s*/i, '').trim();
-                                                        // Check if this option is the current selection
-                                                        const isCurrent = rawTitle.toLowerCase().includes('(current)');
-
                                                         const isSkip = titleText.toLowerCase() === 'skip';
 
                                                         return (
@@ -297,7 +302,6 @@ export default function ChatPanel() {
                                                                     e.currentTarget.style.boxShadow = 'none';
                                                                 }}
                                                                 onClick={() => {
-                                                                    // Current option or Skip: tell the AI to skip (no preview update needed)
                                                                     append({ role: 'user', content: isCurrent || isSkip ? 'Skip' : titleText });
                                                                 }}
                                                             >
@@ -307,19 +311,22 @@ export default function ChatPanel() {
                                                                 {isCurrent && (
                                                                     <div style={{
                                                                         position: 'absolute',
-                                                                        top: '14px',
-                                                                        right: '16px',
-                                                                        fontSize: '9px',
-                                                                        fontWeight: 700,
-                                                                        letterSpacing: '0.12em',
+                                                                        top: '12px',
+                                                                        right: '14px',
+                                                                        fontSize: '10px',
+                                                                        fontWeight: 600,
+                                                                        letterSpacing: '0.08em',
                                                                         textTransform: 'uppercase',
-                                                                        color: '#60a5fa',
-                                                                        background: 'rgba(59,130,246,0.1)',
-                                                                        border: '1px solid rgba(59,130,246,0.15)',
-                                                                        borderRadius: '6px',
-                                                                        padding: '3px 8px',
+                                                                        color: '#93c5fd',
+                                                                        background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.12))',
+                                                                        border: '1px solid rgba(96,165,250,0.2)',
+                                                                        borderRadius: '20px',
+                                                                        padding: '4px 12px',
+                                                                        backdropFilter: 'blur(8px)',
+                                                                        WebkitBackdropFilter: 'blur(8px)',
+                                                                        boxShadow: '0 0 12px rgba(59,130,246,0.08), inset 0 0.5px 0 rgba(255,255,255,0.06)',
                                                                     }}>
-                                                                        Active
+                                                                        Current
                                                                     </div>
                                                                 )}
                                                             </motion.button>
@@ -346,19 +353,27 @@ export default function ChatPanel() {
                                                         </span>
                                                     );
                                                 },
-                                                p: ({ children }) => (
-                                                    <span
-                                                        className="block"
-                                                        style={{
-                                                            fontSize: '12px',
-                                                            fontWeight: 400,
-                                                            color: '#71717a',
-                                                            lineHeight: 1.5,
-                                                        }}
-                                                    >
-                                                        {children}
-                                                    </span>
-                                                ),
+                                                p: ({ children }) => {
+                                                    // Strip (current) from description text too
+                                                    const stripCurrent = (child: any): any => {
+                                                        if (typeof child === 'string') return child.replace(/\s*\(current\)\s*/gi, '').trim();
+                                                        return child;
+                                                    };
+                                                    const cleaned = Array.isArray(children) ? children.map(stripCurrent) : stripCurrent(children);
+                                                    return (
+                                                        <span
+                                                            className="block"
+                                                            style={{
+                                                                fontSize: '12px',
+                                                                fontWeight: 400,
+                                                                color: '#71717a',
+                                                                lineHeight: 1.5,
+                                                            }}
+                                                        >
+                                                            {cleaned}
+                                                        </span>
+                                                    );
+                                                },
                                             }}
                                         >
                                             {optionsPart}

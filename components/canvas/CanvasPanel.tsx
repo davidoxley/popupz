@@ -192,39 +192,99 @@ function WebsitePreview({ html }: { html: string }) {
     }, [handleMessage]);
 
     return (
-        <div className="min-h-full p-8 flex flex-col items-center overflow-y-auto w-full">
-            <motion.div
-                key="website-preview"
-                initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-5xl bg-white shadow-2xl overflow-hidden border border-zinc-200 flex flex-col min-h-[800px] transition-all duration-500"
-                style={{ borderRadius: '1.5rem' }}
-            >
-                {/* Browser chrome bar */}
-                <div className="h-10 bg-zinc-50 border-b border-zinc-200 flex items-center px-4 gap-2 shrink-0">
-                    <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    </div>
-                    <div className="flex-1 max-w-md mx-auto h-6 bg-white rounded-md border border-zinc-200 flex items-center px-3">
-                        <span className="text-[10px] text-zinc-400 font-mono">
-                            https://{brandName.toLowerCase().replace(/\s+/g, "-")}.popupz.shop
-                        </span>
-                    </div>
+        <motion.div
+            key="website-preview"
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full bg-white shadow-2xl overflow-hidden border border-zinc-200 flex flex-col min-h-[800px] transition-all duration-500"
+            style={{ borderRadius: '1.5rem' }}
+        >
+            {/* Browser chrome bar */}
+            <div className="h-10 bg-zinc-50 border-b border-zinc-200 flex items-center px-4 gap-2 shrink-0">
+                <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
                 </div>
+                <div className="flex-1 max-w-md mx-auto h-6 bg-white rounded-md border border-zinc-200 flex items-center px-3">
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                        https://{brandName.toLowerCase().replace(/\s+/g, "-")}.popupz.shop
+                    </span>
+                </div>
+            </div>
 
-                {/* AI-generated HTML in isolated iframe with editing + nav blocking */}
-                <iframe
-                    ref={iframeRef}
-                    srcDoc={enhancedHtml}
-                    title="Website Preview"
-                    className="flex-1 w-full border-none"
-                    style={{ minHeight: '760px' }}
-                    sandbox="allow-scripts"
-                />
-            </motion.div>
+            {/* AI-generated HTML in isolated iframe with editing + nav blocking */}
+            <iframe
+                ref={iframeRef}
+                srcDoc={enhancedHtml}
+                title="Website Preview"
+                className="flex-1 w-full border-none"
+                style={{ minHeight: '760px' }}
+                sandbox="allow-scripts"
+            />
+        </motion.div>
+    );
+}
+
+
+/**
+ * Version history thumbnail strip.
+ * Shows a 20x20 numbered square for each version of the rendered homepage.
+ */
+function VersionStrip() {
+    const versions = useStore((s) => s.htmlVersions);
+    const activeIndex = useStore((s) => s.activeVersionIndex);
+    const setActiveVersion = useStore((s) => s.setActiveVersion);
+
+    if (versions.length <= 1) return null;
+
+    return (
+        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+            {versions.map((_, i) => {
+                const isActive = i === activeIndex;
+                return (
+                    <button
+                        key={i}
+                        onClick={() => setActiveVersion(i)}
+                        title={`Version ${i + 1}`}
+                        style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '4px',
+                            border: isActive ? '1.5px solid rgba(59,130,246,0.6)' : '1px solid rgba(255,255,255,0.08)',
+                            background: isActive
+                                ? 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(99,102,241,0.2))'
+                                : 'rgba(255,255,255,0.04)',
+                            color: isActive ? '#93c5fd' : '#52525b',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            boxShadow: isActive ? '0 0 8px rgba(59,130,246,0.15)' : 'none',
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isActive) {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)';
+                                e.currentTarget.style.color = '#a1a1aa';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isActive) {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                e.currentTarget.style.color = '#52525b';
+                            }
+                        }}
+                    >
+                        {i + 1}
+                    </button>
+                );
+            })}
         </div>
     );
 }
@@ -236,10 +296,24 @@ function WebsitePreview({ html }: { html: string }) {
  */
 export default function CanvasPanel() {
     const homepageDraft = useStore((state) => state.config.homepageDraft);
+    const versions = useStore((state) => state.htmlVersions);
+    const activeIndex = useStore((state) => state.activeVersionIndex);
 
     if (!homepageDraft?.html) {
         return <WowLoader />;
     }
 
-    return <WebsitePreview html={homepageDraft.html} />;
+    // Show the actively selected version, or latest if none selected
+    const displayHtml = activeIndex >= 0 && activeIndex < versions.length
+        ? versions[activeIndex]
+        : homepageDraft.html;
+
+    return (
+        <div className="min-h-full p-8 flex flex-col items-center overflow-y-auto w-full" style={{ background: '#050505' }}>
+            <div className="w-full max-w-5xl">
+                <VersionStrip />
+                <WebsitePreview html={displayHtml} />
+            </div>
+        </div>
+    );
 }
