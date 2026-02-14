@@ -270,6 +270,8 @@ export default function ChatPanel() {
                                                         // Check if this option is the current selection
                                                         const isCurrent = rawTitle.toLowerCase().includes('(current)');
 
+                                                        const isSkip = titleText.toLowerCase() === 'skip';
+
                                                         return (
                                                             <motion.button
                                                                 initial={{ opacity: 0, y: 8 }}
@@ -277,8 +279,8 @@ export default function ChatPanel() {
                                                                 transition={{ duration: 0.25 }}
                                                                 className="w-full text-left transition-all duration-200 active:scale-[0.98] group"
                                                                 style={{
-                                                                    background: isCurrent ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.03)',
-                                                                    border: isCurrent ? '1px solid rgba(59,130,246,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                                                                    background: isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
+                                                                    border: isCurrent ? '1px solid rgba(59,130,246,0.2)' : isSkip ? '1px dashed rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.08)',
                                                                     borderRadius: '16px',
                                                                     padding: '0',
                                                                     overflow: 'hidden',
@@ -290,12 +292,13 @@ export default function ChatPanel() {
                                                                     e.currentTarget.style.boxShadow = '0 0 0 1px rgba(59,130,246,0.1)';
                                                                 }}
                                                                 onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.06)' : 'rgba(255,255,255,0.03)';
-                                                                    e.currentTarget.style.borderColor = isCurrent ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.08)';
+                                                                    e.currentTarget.style.background = isCurrent ? 'rgba(59,130,246,0.06)' : isSkip ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)';
+                                                                    e.currentTarget.style.borderColor = isCurrent ? 'rgba(59,130,246,0.2)' : isSkip ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.08)';
                                                                     e.currentTarget.style.boxShadow = 'none';
                                                                 }}
                                                                 onClick={() => {
-                                                                    append({ role: 'user', content: titleText });
+                                                                    // Current option or Skip: tell the AI to skip (no preview update needed)
+                                                                    append({ role: 'user', content: isCurrent || isSkip ? 'Skip' : titleText });
                                                                 }}
                                                             >
                                                                 <div style={{ padding: '16px 20px' }}>
